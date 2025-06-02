@@ -178,8 +178,7 @@ public class CatMovement : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        //if (!isGrounded)
-        //{
+       
             if (collision.gameObject.CompareTag("Climb"))
             {
                
@@ -189,7 +188,7 @@ public class CatMovement : MonoBehaviour
                 playerAnim.SetTrigger("ClimbIdle");
                    
             }
-        //}
+  
 
         if (collision.gameObject.CompareTag("Ground"))
         {
@@ -217,7 +216,6 @@ public class CatMovement : MonoBehaviour
             {
                 isOnWall = true;
                 isGrounded = false;
-                //playerRigid.useGravity = false;
                 Debug.Log("Is climbing");
                 if (!isPlayingAudio)
                 {
@@ -562,7 +560,7 @@ public class CatMovement : MonoBehaviour
                 else if (currentIndex == 13)
                 {
                     VoicePlayTrigger.instance.PlayCatVoice(6);
-                    //add audio souce with fight to GameManager and play here
+
                     GameManager.sharedInstance.PlayArgument();
                 } else if (currentIndex == 14)
                 {
@@ -591,26 +589,22 @@ public class CatMovement : MonoBehaviour
             playerAnim.SetTrigger("Walk");
             playerAnim.ResetTrigger("Idle");
             walking = true;
-            //steps1.SetActive(true);
         }
         if (Input.GetKeyUp(KeyCode.W))
         {
             playerAnim.ResetTrigger("Walk");
             playerAnim.SetTrigger("Idle");
             walking = false;
-            //steps1.SetActive(false);
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
             playerAnim.SetTrigger("Walk");
             playerAnim.ResetTrigger("Idle");
-            //steps1.SetActive(true);
         }
         if (Input.GetKeyUp(KeyCode.S))
         {
             playerAnim.ResetTrigger("Walk");
             playerAnim.SetTrigger("Idle");
-            //steps1.SetActive(false);
         }
         if (Input.GetKey(KeyCode.A))
         {
@@ -624,19 +618,15 @@ public class CatMovement : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.LeftShift))
             {
-                //steps1.SetActive(false);
-                //steps2.SetActive(true);
+                
                 walk_speed = walk_speed + run_speed;
-                //playerAnim.SetTrigger("run");
-                //playerAnim.ResetTrigger("walk");
+               
             }
             if (Input.GetKeyUp(KeyCode.LeftShift))
             {
-                //steps1.SetActive(true);
-                //steps2.SetActive(false);
+                
                 walk_speed = oldwalk_speed;
-                //playerAnim.ResetTrigger("run");
-                //playerAnim.SetTrigger("walk");
+            
             }
 
             if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.LeftCommand))
