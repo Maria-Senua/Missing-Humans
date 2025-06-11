@@ -152,7 +152,6 @@ public class CatBehaviour : MonoBehaviour
         currentState = CatState.HANG;
         catAnim.ResetTrigger("Climb");
         catAnim.SetTrigger("Hang");
-        gravity = 0;
     }
 
     private void JumpOffWall()
@@ -171,9 +170,10 @@ public class CatBehaviour : MonoBehaviour
         if (jumpDirection != Vector3.zero)
         {
             jumpOffVelocity = jumpDirection.normalized * jumpOffForce;
-            currentState = CatState.JUMP;
-            catAnim.SetTrigger("Jump");
+           
         }
+        currentState = CatState.JUMP;
+        catAnim.SetTrigger("Jump");
     }
 
     private void ReturnToNormalState(ref float timer, float initialTimer, CatState stateToWatch, Action onZero)
