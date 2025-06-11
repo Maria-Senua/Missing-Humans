@@ -150,7 +150,9 @@ public class CatBehaviour : MonoBehaviour
     private void Hang()
     {
         currentState = CatState.HANG;
+        catAnim.ResetTrigger("Climb");
         catAnim.SetTrigger("Hang");
+        gravity = 0;
     }
 
     private void JumpOffWall()
@@ -241,11 +243,11 @@ public class CatBehaviour : MonoBehaviour
 
         if (Input.GetKey(KeyCode.W))
         {
-            moveDirection = currentState == CatState.CLIMB ? gameObject.transform.up * movementFactor : gameObject.transform.forward * movementFactor;
+            moveDirection = (currentState == CatState.CLIMB || currentState == CatState.HANG) ? gameObject.transform.up * movementFactor : gameObject.transform.forward * movementFactor;
         }
         if (Input.GetKey(KeyCode.S))
         {
-            moveDirection = currentState == CatState.CLIMB ? -gameObject.transform.up * movementFactor : -gameObject.transform.forward * movementFactor;
+            moveDirection = (currentState == CatState.CLIMB || currentState == CatState.HANG) ? -gameObject.transform.up * movementFactor : -gameObject.transform.forward * movementFactor;
         }
     }
 
@@ -306,9 +308,11 @@ public class CatBehaviour : MonoBehaviour
 
                 break;
             case CatState.HANG:
+            
                 if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S))
                 {
-                    currentState = CatState.CLIMB;
+                    Debug.Log("hangtest Change to climb");
+                    StartCoroutine(SwitchToClimbNextFrame());
                 } else if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)))
                 {
                     JumpOffWall();
@@ -316,15 +320,18 @@ public class CatBehaviour : MonoBehaviour
 
                 break;
             case CatState.CLIMB:
+
+                SetMovementDirection(0.25f);
+                catAnim.SetTrigger("Climb");
+
                 if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)))
                 {
                     JumpOffWall();
                 }
-                else
+                else if (!Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
                 {
-                    SetMovementDirection(0.5f);
+                    Hang();
                 }
-
 
                 break;
             case CatState.VAULT:
@@ -340,6 +347,13 @@ public class CatBehaviour : MonoBehaviour
                 break;
         }
     }
+
+    private IEnumerator SwitchToClimbNextFrame()
+    {
+        yield return null; 
+        currentState = CatState.CLIMB;
+    }
+
 
     // Update is called once per frame
     void Update()
@@ -363,19 +377,31 @@ public class CatBehaviour : MonoBehaviour
         if (!GameManager.sharedInstance.isGamePaused) cameraTrans.localRotation = Quaternion.Euler(verticalRotation, 0, 0);
 
 
-        if (characterController.isGrounded || currentState == CatState.HANG || currentState == CatState.CLIMB)
+        if (currentState == CatState.HANG)
         {
-
-            verticalMovement = -1f;
-
+            verticalMovement = 0f; 
+        } else if (currentState == CatState.CLIMB)
+        {
+            if (Input.GetKey(KeyCode.W))
+            {
+                verticalMovement = 0.25f;
+            } else if (Input.GetKey(KeyCode.S))
+            {
+                verticalMovement = -0.25f;
+            }
+            
+        }
+        else if (characterController.isGrounded)
+        {
+            verticalMovement = -1f; 
         }
         else
         {
             verticalMovement -= gravity * Time.deltaTime;
-
         }
 
-        moveDirection = Vector3.zero;
+
+        if (currentState != CatState.CLIMB && currentState != CatState.HANG) moveDirection = Vector3.zero;
 
         if (currentState == CatState.IDLE || currentState == CatState.WALK)
         {
@@ -409,14 +435,25 @@ public class CatBehaviour : MonoBehaviour
         characterController.Move(finalMove);
     }
 
-    void OnCollisionEnter(Collision collision)
-    {
+    //void OnCollisionEnter(Collision collision)
+    //{
 
-        if (collision.gameObject.CompareTag("Climb"))
+    //    if (collision.gameObject.CompareTag("Climb"))
+    //    {
+    //        Debug.Log("HangCollider " + currentState);
+    //        Hang();
+    //    }
+    //}
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.gameObject.CompareTag("Climb"))
         {
+            Debug.Log("HangCollider " + currentState);
             Hang();
         }
     }
+
 
     private void OnCollisionStay(Collision collision)
     {
