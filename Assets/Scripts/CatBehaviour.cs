@@ -32,6 +32,8 @@ public class CatBehaviour : MonoBehaviour
     private Coroutine sunCoroutine;
     private Vector3 moveDirection;
 
+    public Transform startPos;
+
     public float speed;
     public float rotationSpeed;
     public float climbSpeed;
@@ -76,7 +78,7 @@ public class CatBehaviour : MonoBehaviour
     public Transform cameraPivot;
 
     private GameObject currentInvestigationArea;
-
+    private int lastTutorialIndex = -1;
 
     private void Awake()
     {
@@ -104,6 +106,10 @@ public class CatBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
+        transform.position = startPos.position;
+        transform.rotation = startPos.rotation;
+
         vaultLayer = LayerMask.NameToLayer("VaultLayer");
         vaultLayer = ~vaultLayer;
 
@@ -381,6 +387,7 @@ public class CatBehaviour : MonoBehaviour
 
                 SetMovementDirection(0.25f);
                 catAnim.SetTrigger("Climb");
+                if (LevelManager.sharedInstance.currentLevel == 1 && TutorialManager.sharedInstance != null) TutorialManager.sharedInstance.startClimbing = true;
 
                 if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)))
                 {
@@ -520,7 +527,35 @@ public class CatBehaviour : MonoBehaviour
             catAnim.SetTrigger("Idle");
         }
 
-        
+        if (LevelManager.sharedInstance.currentLevel == 1)
+        {
+            int currentIndex = TutorialManager.sharedInstance.currentIndex;
+
+            if (currentIndex != lastTutorialIndex) // Index changed
+            {
+                lastTutorialIndex = currentIndex; // Update last index
+
+                if (currentIndex == 11)
+                {
+                    VoicePlayTrigger.instance.PlayCatVoice(4);
+                }
+                else if (currentIndex == 13)
+                {
+                    VoicePlayTrigger.instance.PlayCatVoice(6);
+
+                    GameManager.sharedInstance.PlayArgument();
+                }
+                else if (currentIndex == 14)
+                {
+                    VoicePlayTrigger.instance.PlayCatVoice(7);
+                }
+                else if (currentIndex == 20)
+                {
+                    VoicePlayTrigger.instance.PlayCatVoice(10);
+                }
+            }
+        }
+
         if (Input.GetKeyDown(KeyCode.I)) currentState = CatState.INVENTORY;
         //if (!GameManager.sharedInstance.inventoryOpen) currentState = CatState.IDLE;
     }

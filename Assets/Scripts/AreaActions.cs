@@ -204,7 +204,7 @@ public class AreaActions : MonoBehaviour
     {
         Debug.Log("AREAACTION test num: " + test);
         Debug.Log("AREAACTION subCamera: " + subCamera.enabled);
-        Debug.Log("AREAACTION catCamera: " + catCamera.enabled);
+        //Debug.Log("AREAACTION catCamera: " + catCamera.enabled);
         Debug.Log("AREAACTION Cursor LockState: " + Cursor.lockState);
         Debug.Log("AREAACTION Cursor Visible: " + Cursor.visible);
 
