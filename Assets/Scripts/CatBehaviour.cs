@@ -63,6 +63,12 @@ public class CatBehaviour : MonoBehaviour
     private float initialBeSeriousTime;
 
     private int vaultLayer;
+    public float vaultDuration = 0.5f;
+    private float catHeight = 2.5f;
+    private float catRadius = 0.5f;
+
+    private Vector3 gizmoTargetPos;
+    private bool showGizmo = false;
 
     public Transform playerTrans;
     public Transform cameraTrans;
@@ -97,7 +103,7 @@ public class CatBehaviour : MonoBehaviour
     {
         vaultLayer = LayerMask.NameToLayer("VaultLayer");
         vaultLayer = ~vaultLayer;
-       
+
         initialSoberTime = soberUpTime;
         initialBeSeriousTime = beSeriousTime;
 
@@ -144,7 +150,7 @@ public class CatBehaviour : MonoBehaviour
 
         if (LevelManager.sharedInstance.currentLevel == 1) TutorialManager.sharedInstance.startChilling = true;
 
-        
+
     }
 
     private void Hang()
@@ -170,7 +176,7 @@ public class CatBehaviour : MonoBehaviour
         if (jumpDirection != Vector3.zero)
         {
             jumpOffVelocity = jumpDirection.normalized * jumpOffForce;
-           
+
         }
         currentState = CatState.JUMP;
         catAnim.SetTrigger("Jump");
@@ -256,7 +262,7 @@ public class CatBehaviour : MonoBehaviour
         switch (currentState)
         {
             case CatState.IDLE:
-                
+
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
                     Jump();
@@ -308,12 +314,13 @@ public class CatBehaviour : MonoBehaviour
 
                 break;
             case CatState.HANG:
-            
+
                 if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S))
                 {
                     Debug.Log("hangtest Change to climb");
                     StartCoroutine(SwitchToClimbNextFrame());
-                } else if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)))
+                }
+                else if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)))
                 {
                     JumpOffWall();
                 }
@@ -350,7 +357,7 @@ public class CatBehaviour : MonoBehaviour
 
     private IEnumerator SwitchToClimbNextFrame()
     {
-        yield return null; 
+        yield return null;
         currentState = CatState.CLIMB;
     }
 
@@ -358,6 +365,9 @@ public class CatBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (currentState == CatState.VAULT) return;
+
+
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
@@ -379,21 +389,23 @@ public class CatBehaviour : MonoBehaviour
 
         if (currentState == CatState.HANG)
         {
-            verticalMovement = 0f; 
-        } else if (currentState == CatState.CLIMB)
+            verticalMovement = 0f;
+        }
+        else if (currentState == CatState.CLIMB)
         {
             if (Input.GetKey(KeyCode.W))
             {
                 verticalMovement = 0.25f;
-            } else if (Input.GetKey(KeyCode.S))
+            }
+            else if (Input.GetKey(KeyCode.S))
             {
                 verticalMovement = -0.25f;
             }
-            
+
         }
         else if (characterController.isGrounded)
         {
-            verticalMovement = -1f; 
+            verticalMovement = -1f;
         }
         else
         {
@@ -414,7 +426,7 @@ public class CatBehaviour : MonoBehaviour
                 gameObject.transform.Rotate(Vector3.up, -rotationSpeed * Time.deltaTime);
             }
         }
-        
+
 
         StateUpdate();
 
@@ -435,18 +447,11 @@ public class CatBehaviour : MonoBehaviour
         characterController.Move(finalMove);
     }
 
-    //void OnCollisionEnter(Collision collision)
-    //{
-
-    //    if (collision.gameObject.CompareTag("Climb"))
-    //    {
-    //        Debug.Log("HangCollider " + currentState);
-    //        Hang();
-    //    }
-    //}
 
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
+        if (currentState == CatState.VAULT) return;
+
         if (hit.gameObject.CompareTag("Climb"))
         {
             Debug.Log("HangCollider " + currentState);
@@ -457,6 +462,8 @@ public class CatBehaviour : MonoBehaviour
 
     private void OnCollisionStay(Collision collision)
     {
+        if (currentState == CatState.VAULT) return;
+
         if (collision.gameObject.CompareTag("Climb"))
         {
             VoicePlayTrigger.instance.PlayCatVoice(1);
@@ -465,6 +472,11 @@ public class CatBehaviour : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other.gameObject.CompareTag("Top"))
+        {
+            Vault();
+        }
+
         if (other.gameObject.CompareTag("Sun"))
         {
             sunCoroutine = StartCoroutine(SunDrunkRoutine());
@@ -472,7 +484,7 @@ public class CatBehaviour : MonoBehaviour
 
         if (other.gameObject.CompareTag("Play"))
         {
-            Play();  
+            Play();
         }
 
         if (other.gameObject.CompareTag("Snake"))
@@ -529,7 +541,7 @@ public class CatBehaviour : MonoBehaviour
         if (other.gameObject.CompareTag("Play"))
         {
             foolBar.gameObject.SetActive(false);
-            
+
         }
     }
 
@@ -544,5 +556,67 @@ public class CatBehaviour : MonoBehaviour
     private void GoToCrimeScene()
     {
         GameManager.sharedInstance.TriggerCrimeScene();
+    }
+
+    private IEnumerator LerpVault(Vector3 targetPos, float duration)
+    {
+        float time = 0;
+        Vector3 startPos = transform.position;
+
+        currentState = CatState.VAULT;
+
+        characterController.enabled = false;
+
+        while (time < duration)
+        {
+            float lerpRatio = time / duration;
+            Vector3 nextPos = Vector3.Lerp(startPos, targetPos, lerpRatio);
+            //Vector3 moveDelta = nextPos - transform.position;
+            transform.position = nextPos;
+
+            //characterController.Move(moveDelta);
+
+            time += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = targetPos;
+
+        characterController.enabled = true;
+
+        //Vector3 finalDelta = targetPos - transform.position;
+        //characterController.Move(finalDelta);
+
+        currentState = CatState.IDLE;
+        Debug.Log("Vault complete to " + targetPos);
+    }
+
+
+    private void Vault()
+    {
+        //if (currentState == CatState.VAULT) return;
+
+        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out var firstHit, 1f, vaultLayer))
+        {
+            Vector3 offset = (Camera.main.transform.forward * catRadius * 0.5f) + (Vector3.up * 0.1f * catHeight);
+
+            if (Physics.Raycast(firstHit.point + offset, Vector3.down, out var secondHit, catHeight))
+            {
+                Vector3 finalPosition = secondHit.point + Vector3.up * 0.2f;
+
+                gizmoTargetPos = finalPosition;
+                currentState = CatState.VAULT;
+                StartCoroutine(LerpVault(finalPosition, vaultDuration));
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (gizmoTargetPos != Vector3.zero)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(gizmoTargetPos, 0.1f); // Draw sphere at target
+            Gizmos.DrawLine(transform.position, gizmoTargetPos); // Line to target
+        }
     }
 }
