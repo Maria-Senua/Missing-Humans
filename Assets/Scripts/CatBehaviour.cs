@@ -70,6 +70,8 @@ public class CatBehaviour : MonoBehaviour
     private float catHeight = 2.5f;
     private float catRadius = 0.5f;
 
+    private bool wasInClimbZoneLastFrame = false;
+
     private Vector3 gizmoTargetPos;
     private bool showGizmo = false;
 
@@ -421,19 +423,32 @@ public class CatBehaviour : MonoBehaviour
 
     private bool IsInClimbZone()
     {
-        float checkRadius = 0.3f; 
-        Vector3 checkPosition = transform.position + Vector3.up * 0.3f; 
+        float checkRadius = 0.3f;
+        Vector3 checkPosition = transform.position + Vector3.up * 0.3f;
 
         Collider[] hits = Physics.OverlapSphere(checkPosition, checkRadius);
+        bool currentlyInClimb = false;
+
         foreach (Collider col in hits)
         {
             if (col.CompareTag("Climb"))
             {
-                return true;
+                currentlyInClimb = true;
+                break;
             }
         }
-        return false;
+
+        // Entered climb zone this frame
+        if (currentlyInClimb && !wasInClimbZoneLastFrame)
+        {
+            VoicePlayTrigger.instance.PlayCatVoice(1);
+        }
+
+        // Update the last frame flag
+        wasInClimbZoneLastFrame = currentlyInClimb;
+        return currentlyInClimb;
     }
+
 
 
     // Update is called once per frame
@@ -573,15 +588,6 @@ public class CatBehaviour : MonoBehaviour
     }
 
 
-    private void OnCollisionStay(Collision collision)
-    {
-        if (currentState == CatState.VAULT) return;
-
-        if (collision.gameObject.CompareTag("Climb"))
-        {
-            VoicePlayTrigger.instance.PlayCatVoice(1);
-        }
-    }
 
     private void OnTriggerEnter(Collider other)
     {
