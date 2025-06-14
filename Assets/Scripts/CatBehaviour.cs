@@ -246,16 +246,41 @@ public class CatBehaviour : MonoBehaviour
 
     private void SetMovementDirection(float movementFactor = 1.0f)
     {
+        moveDirection = Vector3.zero; // Reset first
 
-        if (Input.GetKey(KeyCode.W))
+        if (currentState == CatState.CLIMB || currentState == CatState.HANG)
         {
-            moveDirection = (currentState == CatState.CLIMB || currentState == CatState.HANG) ? gameObject.transform.up * movementFactor : gameObject.transform.forward * movementFactor;
+            if (Input.GetKey(KeyCode.W))
+            {
+                moveDirection += transform.up * movementFactor;
+            }
+            if (Input.GetKey(KeyCode.S))
+            {
+                moveDirection += -transform.up * movementFactor;
+            }
+
+            if (Input.GetKey(KeyCode.A))
+            {
+                moveDirection = -transform.right * movementFactor * 0.01f;
+            }
+            if (Input.GetKey(KeyCode.D))
+            {
+                moveDirection = transform.right * movementFactor * 0.01f;
+            }
         }
-        if (Input.GetKey(KeyCode.S))
+        else
         {
-            moveDirection = (currentState == CatState.CLIMB || currentState == CatState.HANG) ? -gameObject.transform.up * movementFactor : -gameObject.transform.forward * movementFactor;
+            if (Input.GetKey(KeyCode.W))
+            {
+                moveDirection = transform.forward * movementFactor;
+            }
+            else if (Input.GetKey(KeyCode.S))
+            {
+                moveDirection = -transform.forward * movementFactor;
+            }
         }
     }
+
 
     private void StateUpdate()
     {
@@ -315,7 +340,7 @@ public class CatBehaviour : MonoBehaviour
                 break;
             case CatState.HANG:
 
-                if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S))
+                if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
                 {
                     Debug.Log("hangtest Change to climb");
                     StartCoroutine(SwitchToClimbNextFrame());
@@ -335,14 +360,14 @@ public class CatBehaviour : MonoBehaviour
                 {
                     JumpOffWall();
                 }
-                else if (!Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
+                else if (!Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S) && !Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))
                 {
                     Hang();
                 }
 
                 break;
             case CatState.VAULT:
-
+                //dealt in funcs below
 
                 break;
             case CatState.SCARED:
@@ -359,6 +384,22 @@ public class CatBehaviour : MonoBehaviour
     {
         yield return null;
         currentState = CatState.CLIMB;
+    }
+
+    private bool IsInClimbZone()
+    {
+        float checkRadius = 0.3f; 
+        Vector3 checkPosition = transform.position + Vector3.up * 0.3f; 
+
+        Collider[] hits = Physics.OverlapSphere(checkPosition, checkRadius);
+        foreach (Collider col in hits)
+        {
+            if (col.CompareTag("Climb"))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -445,6 +486,12 @@ public class CatBehaviour : MonoBehaviour
         }
 
         characterController.Move(finalMove);
+
+        if ((currentState == CatState.CLIMB || currentState == CatState.HANG) && !IsInClimbZone())
+        {
+            currentState = CatState.IDLE;
+            catAnim.SetTrigger("Idle");
+        }
     }
 
 
@@ -472,6 +519,8 @@ public class CatBehaviour : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+      
+
         if (other.gameObject.CompareTag("Top"))
         {
             Vault();
