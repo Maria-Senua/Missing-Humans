@@ -17,6 +17,7 @@ public class CatBehaviour : MonoBehaviour
         JUMP,
         PLAY,
         CHILL,
+        SEARCH,
         INVESTIGATE,
         INVENTORY,
         HANG,
@@ -73,6 +74,8 @@ public class CatBehaviour : MonoBehaviour
     public Transform playerTrans;
     public Transform cameraTrans;
     public Transform cameraPivot;
+
+    private GameObject currentInvestigationArea;
 
 
     private void Awake()
@@ -330,12 +333,35 @@ public class CatBehaviour : MonoBehaviour
                 ReturnToNormalState(ref soberUpTime, initialSoberTime, CatState.CHILL, () => SoberUp());
 
                 break;
+            case CatState.SEARCH:
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    if (currentInvestigationArea != null)
+                    {
+                        Debug.Log("AREAACTION current area " + currentInvestigationArea.name);
+                        currentState = CatState.INVESTIGATE;
+                        if (LevelManager.sharedInstance.currentLevel == 1 && TutorialManager.sharedInstance != null) TutorialManager.sharedInstance.isSearching = true;
+                        AreaActions areaScript = currentInvestigationArea.GetComponent<AreaActions>();
+                        if (areaScript != null)
+                        {
+                            areaScript.ActivateView();
+                        }
+
+                    }
+                  
+                } else
+                {
+                    SetMovementDirection();
+                }
+                break;
             case CatState.INVESTIGATE:
 
-
+                Debug.Log("INVESTIGATE");
+                if (Camera.main.isActiveAndEnabled) currentState = CatState.IDLE;
                 break;
             case CatState.INVENTORY:
 
+               if (!GameManager.sharedInstance.inventoryOpen) currentState = CatState.IDLE;
 
                 break;
             case CatState.HANG:
@@ -408,6 +434,7 @@ public class CatBehaviour : MonoBehaviour
     {
         if (currentState == CatState.VAULT) return;
 
+        GameManager.sharedInstance.isInvestigating = currentState == CatState.INVESTIGATE;
 
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
@@ -492,6 +519,10 @@ public class CatBehaviour : MonoBehaviour
             currentState = CatState.IDLE;
             catAnim.SetTrigger("Idle");
         }
+
+        
+        if (Input.GetKeyDown(KeyCode.I)) currentState = CatState.INVENTORY;
+        //if (!GameManager.sharedInstance.inventoryOpen) currentState = CatState.IDLE;
     }
 
 
@@ -565,6 +596,11 @@ public class CatBehaviour : MonoBehaviour
             GameManager.sharedInstance.evidenceList.SetActive(true);
             Debug.Log("listtrigger " + GameManager.sharedInstance.evidenceList.activeInHierarchy);
             Destroy(other.gameObject);
+        }
+        if (other.gameObject.CompareTag("Search"))
+        {
+            currentState = CatState.SEARCH;
+            currentInvestigationArea = other.gameObject;
         }
     }
 
