@@ -257,7 +257,7 @@ public class CatBehaviour : MonoBehaviour
 
     private void SetMovementDirection(float movementFactor = 1.0f)
     {
-        moveDirection = Vector3.zero; // Reset first
+        moveDirection = Vector3.zero; 
 
         if (currentState == CatState.CLIMB || currentState == CatState.HANG)
         {
@@ -313,7 +313,20 @@ public class CatBehaviour : MonoBehaviour
 
             case CatState.WALK:
 
-                SetMovementDirection();
+                float speedMultiplier = 1f;
+
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    speedMultiplier = 1.5f;
+                    Debug.Log("Walkstate run");
+                }
+                else if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.LeftCommand))
+                {
+                    speedMultiplier = 0.5f;
+                    Debug.Log("Walkstate snaek");
+                }
+
+                SetMovementDirection(speedMultiplier);
                 catAnim.SetTrigger("Walk");
 
                 if (Input.GetKeyDown(KeyCode.Space))
@@ -520,7 +533,7 @@ public class CatBehaviour : MonoBehaviour
 
         StateUpdate();
 
-        Vector3 finalMove = moveDirection.normalized * speed * Time.deltaTime;
+        Vector3 finalMove = moveDirection * speed * Time.deltaTime;
         finalMove.y = verticalMovement * Time.deltaTime;
 
         if (scaredSpeed.magnitude > 0.1f)
